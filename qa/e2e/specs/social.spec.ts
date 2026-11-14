@@ -192,7 +192,7 @@ test.describe("feed", () => {
 		// The review's author can remove the fan's comment.
 		await page.goto(itemUrl);
 		await expect(reviews.getByText("Nice take")).toBeVisible();
-		await reviews.getByRole("button", { name: t("comments.delete") }).click();
+		await reviews.getByRole("button", { name: t("comments.delete"), exact: true }).click();
 		await expect(reviews.getByText("Nice take")).toHaveCount(0);
 		await fanContext.close();
 	});

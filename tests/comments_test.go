@@ -243,7 +243,10 @@ func TestCommentsDisabledByDefault(t *testing.T) {
 // A comment is removed by its author, by the owner of the review or list it sits on, or by a moderator or admin;
 // everyone else gets 404. Removal by someone else tells the author.
 func TestComments_DeleteByOwnerAndModerator(t *testing.T) {
-	r, _, b, _, ac, bc, pc, _, rv, list := socialSetupEnv(t, map[string]string{"FLAG_COMMUNITY_TRUSTED_MODERATORS": "true"})
+	r, _, b, _, ac, bc, pc, _, rv, list := socialSetupEnv(
+		t,
+		map[string]string{"FLAG_COMMUNITY_TRUSTED_MODERATORS": "true"},
+	)
 
 	mod := makeUser(t, r.app, "cmod@example.com", models.RoleModerator, true)
 	modc := browserFor(t, r.app, mod)

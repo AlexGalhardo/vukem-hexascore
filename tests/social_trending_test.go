@@ -156,14 +156,17 @@ func TestSocialTrending_WeeklyRanking(t *testing.T) {
 		t.Fatalf("%d weeks stored, want 1", n)
 	}
 
-	if _, err := social.PruneTrending(t.Context(), r.acc.DB, now.Add(7*social.TrendingKeepWeeks*day+14*day)); err != nil {
+	if _, err := social.PruneTrending(
+		t.Context(),
+		r.acc.DB,
+		now.Add(7*social.TrendingKeepWeeks*day+14*day),
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	if n := r.count(`SELECT count(*) FROM social_trending`); n != 0 {
 		t.Fatalf("%d rows after the prune, want 0", n)
 	}
-
 }
 
 func TestSocialTrending_Empty(t *testing.T) {

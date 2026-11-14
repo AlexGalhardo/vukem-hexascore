@@ -1,14 +1,19 @@
 package routes
 
 import (
+	"context"
+
 	"github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/ratelimit"
 	"github.com/AlexGalhardo/vukem/router"
 
 	"github.com/AlexGalhardo/hexascore-app/app/accounts"
+	"github.com/AlexGalhardo/hexascore-app/app/admin"
+	"github.com/AlexGalhardo/hexascore-app/app/community"
 	"github.com/AlexGalhardo/hexascore-app/app/controllers"
 	"github.com/AlexGalhardo/hexascore-app/app/http/limits"
+	"github.com/AlexGalhardo/hexascore-app/app/models"
 	"github.com/AlexGalhardo/hexascore-app/app/social"
 )
 
@@ -46,7 +51,11 @@ func Follows(r *router.Router, app *vukem.App) error {
 	reviewLimit := ratelimit.Middleware(limits.Reviews.From(limiters), ratelimit.ByUser(acc.Web.Name()))
 	r.Put("/items/{id}/review", reviews.Put).Name("reviews.put").Use(required, verified, reviewLimit)
 	r.Delete("/items/{id}/review", reviews.Delete).Name("reviews.delete").Use(required, verified, reviewLimit)
-	comments := controllers.NewComments(svc, acc.Web.Name())
+	comments := controllers.NewComments(svc, acc.Web.Name(), func(ctx context.Context, u *models.User) bool {
+		return admin.CanModerate(ctx, u, app.Now(), func(ctx context.Context) bool {
+			return svc.Flags.Enabled(ctx, community.TrustedModeratorsFlag)
+		})
+	})
 	commentLimit := ratelimit.Middleware(limits.Comments.From(limiters), ratelimit.ByUser(acc.Web.Name()))
 	reactLimit := ratelimit.Middleware(limits.Reactions.From(limiters), ratelimit.ByUser(acc.Web.Name()))
 	r.Post("/comments/{type}/{id}", comments.Create).Name("comments.create").Use(required, verified, commentLimit)

@@ -46,14 +46,26 @@ func DefineModeration(
 	g.DefineResult(AbilityRunIngestion, adminOnly)
 	g.DefineResult(AbilityRollbackIngestion, adminOnly)
 	g.DefineResult(AbilityModerate, func(ctx context.Context, u *models.User) authz.Result {
-		if IsAdmin(u, now()) {
-			return authz.Allow()
-		}
-		if u != nil && u.Role == models.RoleModerator && !u.IsBanned(now()) && u.EmailVerified() &&
-			trustedModerators(ctx) {
+		if CanModerate(ctx, u, now(), trustedModerators) {
 			return authz.Allow()
 		}
 
 		return authz.Deny()
 	})
+}
+
+// CanModerate is the rule behind AbilityModerate, shared with the member-facing moderation actions (deleting
+// someone else's comment): an active, verified admin, or an active, verified moderator while trustedModerators is on.
+func CanModerate(
+	ctx context.Context,
+	u *models.User,
+	now time.Time,
+	trustedModerators func(context.Context) bool,
+) bool {
+	if IsAdmin(u, now) {
+		return true
+	}
+
+	return u != nil && u.Role == models.RoleModerator && !u.IsBanned(now) && u.EmailVerified() &&
+		trustedModerators(ctx)
 }

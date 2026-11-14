@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"context"
+
 	"github.com/AlexGalhardo/vukem/auth"
 	"github.com/AlexGalhardo/vukem/web"
 
@@ -12,13 +14,19 @@ import (
 // Comments serves comments and reactions on reviews, comments and lists (SDD 14 §12.11); 404 while the flag
 // `social` is off.
 type Comments struct {
-	svc   *social.Follows
-	guard string
+	svc         *social.Follows
+	guard       string
+	canModerate func(context.Context, *models.User) bool
 }
 
-// NewComments builds the handlers for the session guard.
-func NewComments(svc *social.Follows, guard string) *Comments {
-	return &Comments{svc: svc, guard: guard}
+// NewComments builds the handlers for the session guard; canModerate is the app's moderation rule
+// (admin.CanModerate with the clock and the trusted-moderators flag).
+func NewComments(
+	svc *social.Follows,
+	guard string,
+	canModerate func(context.Context, *models.User) bool,
+) *Comments {
+	return &Comments{svc: svc, guard: guard, canModerate: canModerate}
 }
 
 func (h *Comments) user(c *web.Ctx) (models.User, error) {
@@ -55,8 +63,7 @@ func (h *Comments) Delete(c *web.Ctx) error {
 		return pageError(c, err)
 	}
 
-	if err := h.svc.DeleteComment(c.Context(), u.ID, u.Role == models.RoleModerator || u.Role == models.RoleAdmin,
-		c.Param("id")); err != nil {
+	if err := h.svc.DeleteComment(c.Context(), u.ID, h.canModerate(c.Context(), &u), c.Param("id")); err != nil {
 		return pageError(c, err)
 	}
 

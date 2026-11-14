@@ -122,3 +122,77 @@ test.describe("follows", () => {
 		await fanContext.close();
 	});
 });
+
+test.describe("feed", () => {
+	test.skip(!canReadMail(), "needs docker access to the app container logs (E2E_APP_CONTAINER)");
+	test.skip(!socialOn, "needs FLAG_SOCIAL=true on the app and E2E_SOCIAL_OPEN=true");
+
+	test("follow, see the review in the feed, like and comment on it, and the author removes the comment", async ({
+		page,
+		browser,
+		prefix,
+		t,
+		any,
+	}, testInfo) => {
+		test.setTimeout(360_000);
+		const star = await createVerifiedAccount(page, prefix, any);
+		const fanContext = await browser.newContext({
+			locale: testInfo.project.use.locale,
+			extraHTTPHeaders: {
+				"X-Forwarded-For": `10.251.${1 + testInfo.workerIndex}.${1 + testInfo.repeatEachIndex}`,
+			},
+		});
+		const fan = await fanContext.newPage();
+		await createVerifiedAccount(fan, prefix, any);
+
+		// The star shares activity, rates an item and reviews it.
+		await page.goto(`${prefix}/profile`);
+		await page.getByLabel(t("social.optIn.label")).check();
+		await expect(page.getByLabel(t("social.optIn.label"))).toBeChecked();
+
+		await openTopItem(page, prefix, "games", projectSlot(testInfo) + 11);
+		const itemUrl = page.url();
+		const title = ((await page.locator("h1").textContent()) ?? "").trim();
+		const groups = page.getByRole("radiogroup");
+		for (let i = 0; i < 6; i++) {
+			await groups.nth(i).getByRole("radio").first().focus();
+			await page.keyboard.press("End");
+		}
+		await page.getByRole("button", { name: t("ratings.save") }).click();
+		await expect(page.getByRole("button", { name: any("ratings.update") })).toBeVisible();
+
+		const reviews = page.locator("section[aria-labelledby=reviews-heading]");
+		await reviews.getByLabel(t("reviews.body")).fill("Feed review body");
+		await reviews.getByRole("button", { name: t("reviews.save") }).click();
+		await expect(reviews.getByText("Feed review body")).toBeVisible();
+
+		// The fan follows the star and finds the review in the feed.
+		await fan.goto(`${prefix}/u/${star.nickname.toLowerCase()}`);
+		await fan.getByRole("button", { name: t("social.follow.follow") }).click();
+		await expect(fan.getByRole("button", { name: t("social.follow.unfollow") })).toBeVisible();
+
+		await fan.goto(`${prefix}/feed`);
+		await expect(
+			fan.getByText(t("social.feed.review_published", { nickname: star.nickname })),
+		).toBeVisible();
+		await expectNoSeriousA11yViolations(fan);
+		await fan.getByRole("link", { name: title }).first().click();
+
+		// Like once (a second click would remove it), then comment.
+		const fanReviews = fan.locator("section[aria-labelledby=reviews-heading]");
+		await fanReviews.getByRole("button", { name: t("reactions.like", { count: 0 }) }).click();
+		await expect(
+			fanReviews.getByRole("button", { name: t("reactions.like", { count: 1 }) }),
+		).toHaveAttribute("aria-pressed", "true");
+		await fanReviews.getByLabel(t("comments.label")).fill("Nice take");
+		await fanReviews.getByRole("button", { name: t("comments.send") }).click();
+		await expect(fanReviews.getByText("Nice take")).toBeVisible();
+
+		// The review's author can remove the fan's comment.
+		await page.goto(itemUrl);
+		await expect(reviews.getByText("Nice take")).toBeVisible();
+		await reviews.getByRole("button", { name: t("comments.delete") }).click();
+		await expect(reviews.getByText("Nice take")).toHaveCount(0);
+		await fanContext.close();
+	});
+});

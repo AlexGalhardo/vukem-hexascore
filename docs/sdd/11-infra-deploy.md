@@ -75,7 +75,7 @@ Retention: `item_conflicts` keeps one row per contested QID and kind (a few thou
 
 Retention: `offer_source_checks` holds one row per item and source, upserted in place and deleted with the item; no prune task needed, no user data.
 
-Retention: `trending_snapshots` keeps 90 days, both windows (`recommend.prune_trending`, 04:45); `item_popularity_external` keeps 35 days (the home score reads today and 7 days back; same task); `trending_overrides` rows are deleted a year after their end date, open-ended ones stay (same task); `trending_overrides.admin_id` is an admin's users.id kept as a bare id (the purge keeps the users row). No user content.
+Retention: `trending_snapshots` keeps 90 days, both windows (`recommend.prune_trending`, 04:45); `item_popularity_external` keeps 35 days (the home score reads today and 7 days back; same task); `trending_overrides` rows are deleted a year after their end date, open-ended ones stay (same task); `trending_overrides.admin_id` is an admin's users.id kept as a bare id (the purge keeps the users row). No user content. `social_trending` (SDD 14 §12.13, weekly social ranking of review and item ids and counters) keeps 12 weeks (same task); it has no user column.
 
 Retention of the operational tables without a prune of their own (audit T-17): job `ops.prune_retention` daily at 04:55, batches of 5,000 rows, windows in `config/retention.go`, each overridable with `RETENTION_<TABLE>_DAYS`.
 

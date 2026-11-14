@@ -9,11 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **social:** Weekly trending ranking of the most active reviews and items of the last 7 days (reviews 3, comments 2, reactions 1 points, halved every 72 hours), computed by `social.compute_trending` on Sunday 03:00 America/Sao_Paulo into the new `social_trending` table (12 weeks kept) and shown on the public `/trending` page while the `social` flag is on
+- **social:** The author of a review or list can delete other members' comments on it; the comment's author gets a `content_deleted` notice
+- **e2e:** Follow, feed, like, comment and owner-delete flow in `social.spec.ts`
+
 - **ui:** Public profile link, library and lists shortcuts in the /profile header
 - **ui:** Warning toasts, and vibrant green, yellow and red toasts with bold uppercase text
 
 ### Changed
 
+- **social:** Moderators and admins can delete any comment through `DELETE /comments/{id}`, under the same rule as the moderation panel (`admin.CanModerate`: active, verified, and the trusted-moderators flag for moderators)
 - **profile:** API key management moved from /profile/api into the /profile "API keys" section; /profile/api answers 301 to /profile#api
 - **profile:** /dashboard removed; logins, onboarding, verification and account deletion land on /profile and /dashboard answers 301 to /profile
 - **ui:** Contact feedback shows below the send button (green on success, red on error)

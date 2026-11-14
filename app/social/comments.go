@@ -49,17 +49,17 @@ func ErrReactSelf() error {
 
 // Comment is one comment with its replies (top level only), as plain text.
 type Comment struct {
-	ID         string    `json:"id"`
-	Author     Actor     `json:"author"`
-	Body       string    `json:"body"`
-	Likes      int       `json:"likes"`
-	Helpful    int       `json:"helpful"`
-	MyReaction string    `json:"myReaction,omitempty"`
-	Mine       bool      `json:"mine,omitempty"`
+	ID         string `json:"id"`
+	Author     Actor  `json:"author"`
+	Body       string `json:"body"`
+	Likes      int    `json:"likes"`
+	Helpful    int    `json:"helpful"`
+	MyReaction string `json:"myReaction,omitempty"`
+	Mine       bool   `json:"mine,omitempty"`
 	// Removable is set when the viewer owns the review or list the comment sits on and may delete it.
-	Removable bool `json:"removable,omitempty"`
-	CreatedAt  time.Time `json:"createdAt"`
-	Replies    []Comment `json:"replies,omitempty"`
+	Removable bool      `json:"removable,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+	Replies   []Comment `json:"replies,omitempty"`
 }
 
 // Reactions are the counters of a target and the viewer's own reaction ("" for none).

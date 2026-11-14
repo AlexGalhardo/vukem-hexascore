@@ -3,6 +3,7 @@
 package tests
 
 import (
+	"maps"
 	"net/http"
 	"testing"
 
@@ -30,9 +31,7 @@ func newSocialRigEnv(t *testing.T, on bool, extra map[string]string) *listRig {
 		env["FLAG_SOCIAL"] = "true"
 	}
 
-	for k, v := range extra {
-		env[k] = v
-	}
+	maps.Copy(env, extra)
 
 	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: env})
 	acc, err := accounts.New(app.App)

@@ -6,9 +6,11 @@ import (
 
 	vukem "github.com/AlexGalhardo/vukem"
 	"github.com/AlexGalhardo/vukem/queue"
+
+	"github.com/AlexGalhardo/hexascore-app/app/social"
 )
 
-// PruneTrending deletes trending snapshots older than 90 days, external popularity values older than 35 days (the
+// PruneTrending deletes trending snapshots older than 90 days, social trending weeks older than 12, external popularity values older than 35 days (the
 // score reads today and 7 days back) and pin/ban overrides that expired more than a year ago; scheduled daily at 04:45 in
 // routes/schedule.go.
 type PruneTrending struct{}
@@ -48,9 +50,14 @@ func handlePruneTrending(app *vukem.App) queue.Registration {
 			return err
 		}
 
+		weeks, err := social.PruneTrending(ctx, db, now)
+		if err != nil {
+			return err
+		}
+
 		e, _ := ext.RowsAffected()
 		o, _ := over.RowsAffected()
-		app.Log.InfoContext(ctx, "prune trending", "snapshots", n, "external", e, "overrides", o)
+		app.Log.InfoContext(ctx, "prune trending", "snapshots", n, "external", e, "overrides", o, "social_weeks", weeks)
 
 		return nil
 	}, queue.Timeout(10*time.Minute), queue.Retries(1))

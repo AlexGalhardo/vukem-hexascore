@@ -43,6 +43,7 @@ func AllWith(app *vukem.App, ingestSrc IngestSources) []queue.Registration {
 		handleRecommendUser(app),
 		handleRecoEvalMonthly(app),
 		handleComputeTrending(app),
+		handleComputeSocialTrending(app),
 		handleTrendingRebuild(app),
 		handlePruneTrending(app),
 		handleVerifyOffers(app),

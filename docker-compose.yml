@@ -74,7 +74,8 @@ services:
       # Social layer flag (SDD 14 §12.3); off unless the shell opens it (E2E_SOCIAL_OPEN=true for qa/e2e/specs/social.spec.ts).
       FLAG_SOCIAL: ${FLAG_SOCIAL:-false}
     # Migrate, then seed DemoCatalog (1 admin, 50 users, 300 items); the seeder is idempotent, so a failure is real.
-    entrypoint: ["/bin/sh", "-c", "/app/app migrate && /app/app db:seed --force DemoCatalog"]
+    # --allow-destructive: vukem v0.41.0 schema.Destructive reads "ALTER TABLE ... DROP CONSTRAINT x" as a DROP COLUMN (dropColumnRe makes COLUMN optional), so the production-mode image refuses 20261031160000_allow_moderator_role. This database is throwaway; the production pre-deploy is not affected by this flag.
+    entrypoint: ["/bin/sh", "-c", "/app/app migrate --allow-destructive && /app/app db:seed --force DemoCatalog"]
     # A stack in another compose project cannot resolve "postgres"; it reaches the published 5433 through the host.
     extra_hosts: ["host.docker.internal:host-gateway"]
     restart: "no"

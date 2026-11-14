@@ -16,11 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Build and start the app
+      - name: Build the image
+        run: docker build -t hexascore:dast .
+      # The bare image exits at boot without a database and Stripe settings,
+      # so start it through the compose "app" profile (Postgres, migrate, seed)
+      # like the e2e and Lighthouse jobs do.
+      - name: Start the app
         run: |
-          docker build -t hexascore:dast .
-          docker run -d --name app -p 3000:3000 -e APP_KEY="base64:$(openssl rand -base64 32)" -e APP_URL=http://localhost:3000 hexascore:dast
-          for i in $(seq 1 30); do curl -fsS localhost:3000/up && break; sleep 1; done
+          export APP_KEY="base64:$(openssl rand -base64 32)"
+          E2E_IMAGE_TAG=dast bash scripts/ci/qa-up.sh hexascore:dast
+          curl -fsS localhost:3000/up
       - name: ZAP baseline
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
         with:
@@ -40,3 +45,6 @@ jobs:
             report_json.json
             nuclei.txt
           retention-days: 14
+      - name: Stop the app
+        if: always()
+        run: docker compose --project-name hx-ci --profile app down -v

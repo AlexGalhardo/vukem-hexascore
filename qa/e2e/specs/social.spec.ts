@@ -147,7 +147,8 @@ test.describe("feed", () => {
 
 		// The star shares activity, rates an item and reviews it.
 		await page.goto(`${prefix}/profile`);
-		await page.getByLabel(t("social.optIn.label")).check();
+		// A controlled checkbox: it flips once the PATCH answers, so click and wait rather than check().
+		await page.getByLabel(t("social.optIn.label")).click();
 		await expect(page.getByLabel(t("social.optIn.label"))).toBeChecked();
 
 		await openTopItem(page, prefix, "games", projectSlot(testInfo) + 11);

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **social:** The comment form could not post a top-level comment (the empty `parentId` it sends failed the UUID check)
 - **ci:** The DAST workflow starts the app through the compose `app` profile (Postgres, migrate, seed) instead of a bare container that exited at boot without a database and Stripe settings
 - **docker:** The runtime image pins `postgresql18-client=18.7-r0`; Alpine dropped 18.6-r0 and the build failed
 - **qa:** The compose `app-init` migrates with `--allow-destructive` because vukem v0.41.0 reads `DROP CONSTRAINT` as a column drop and refused the moderator-role migration in the production-mode image

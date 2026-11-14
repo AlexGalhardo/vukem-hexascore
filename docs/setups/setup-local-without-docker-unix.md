@@ -8,7 +8,7 @@ Install Go 1.27.3, bun 1.4.3, the vukem CLI v0.37.0 and git as described in the 
 
 ## Install PostgreSQL 18.6
 
-The repository pins Postgres 18.6 (`postgres:18.6-alpine3.24` in `docker-compose.yml`, `postgresql18-client=18.6-r0` in the `Dockerfile`). Use the same version natively.
+The repository pins Postgres 18.6 (`postgres:18.6-alpine3.24` in `docker-compose.yml`, `postgresql18-client=18.7-r0` in the `Dockerfile`). Use the same version natively.
 
 ### Debian and Ubuntu (apt.postgresql.org)
 

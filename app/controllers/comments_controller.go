@@ -48,14 +48,15 @@ func (h *Comments) Create(c *web.Ctx) error {
 	return c.Back("/")
 }
 
-// Delete removes the signed-in user's comment {id}.
+// Delete removes comment {id} for its author, the owner of its review or list, or a moderator or admin.
 func (h *Comments) Delete(c *web.Ctx) error {
 	u, err := h.user(c)
 	if err != nil {
 		return pageError(c, err)
 	}
 
-	if err := h.svc.DeleteComment(c.Context(), u.ID, c.Param("id")); err != nil {
+	if err := h.svc.DeleteComment(c.Context(), u.ID, u.Role == models.RoleModerator || u.Role == models.RoleAdmin,
+		c.Param("id")); err != nil {
 		return pageError(c, err)
 	}
 

@@ -197,21 +197,44 @@ VALUES ($1, $2, $3, $4, $5)`, id, userID, targetID, parent, strings.TrimSpace(bo
 	})
 }
 
-// DeleteComment removes userID's own comment and its replies; another user's comment is 404.
-func (s *Follows) DeleteComment(ctx context.Context, userID int64, id string) error {
+// DeleteComment removes comment id and its replies. The comment's author, the author of the review or list it
+// sits on, and a moderator (moderator true: the moderator or admin role, checked by the caller) may do it; anyone
+// else gets 404, as for a missing comment. When someone else removes it, the author gets a content_deleted notice.
+func (s *Follows) DeleteComment(ctx context.Context, userID int64, moderator bool, id string) error {
 	if _, err := uuid.Parse(id); err != nil {
 		return ErrNotFound()
 	}
 
-	res, err := s.DB.ExecContext(ctx, `DELETE FROM comments WHERE id = $1 AND user_id = $2`, id, userID)
-	if err != nil {
-		return fmt.Errorf("social: delete comment: %w", err)
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrNotFound()
-	}
+	return s.DB.Tx(ctx, func(tx *database.Tx) error {
+		var (
+			author  int64
+			onOwned bool
+		)
 
-	return nil
+		err := tx.QueryRowContext(ctx, `SELECT c.user_id, coalesce(v.user_id, l.user_id) = $2
+FROM comments c LEFT JOIN reviews v ON v.id = c.review_id LEFT JOIN lists l ON l.id = c.list_id
+WHERE c.id = $1 FOR UPDATE OF c`, id, userID).Scan(&author, &onOwned)
+		if errors.Is(err, sql.ErrNoRows) || (err == nil && author != userID && !onOwned && !moderator) {
+			return ErrNotFound()
+		}
+
+		if err != nil {
+			return fmt.Errorf("social: delete comment: %w", err)
+		}
+
+		if _, err := tx.ExecContext(ctx, `DELETE FROM comments WHERE id = $1`, id); err != nil {
+			return fmt.Errorf("social: delete comment: %w", err)
+		}
+
+		if author == userID {
+			return nil
+		}
+
+		_, err = notifications.Send(ctx, tx, author, notifications.ContentDeleted, "comment-removed:"+id,
+			map[string]any{"targetType": "comment"})
+
+		return err
+	})
 }
 
 // React sets userID's one reaction on typ/id (a new kind replaces the old one); the trigger of the reactions table

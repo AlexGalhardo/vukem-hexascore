@@ -133,7 +133,7 @@ func TestComments(t *testing.T) {
 		t.Fatalf("list comments = %v", v)
 	}
 
-	ac.Delete("/comments/" + top).AssertNotFound()
+	pc.Delete("/comments/" + top).AssertNotFound()
 	bc.Delete("/comments/" + top).AssertStatus(http.StatusSeeOther)
 	if n := r.count(`SELECT count(*) FROM comments WHERE review_id = $1`, rv); n != 1 {
 		t.Fatalf("%d review comments after deleting the thread, want 1 (the reply went with it)", n)
@@ -222,4 +222,52 @@ func TestCommentsDisabledByDefault(t *testing.T) {
 
 	comment(bc, "list", g, "x", "").AssertNotFound()
 	react(bc, "list", g, "like").AssertNotFound()
+}
+
+// A comment is removed by its author, by the owner of the review or list it sits on, or by a moderator or admin;
+// everyone else gets 404. Removal by someone else tells the author.
+func TestComments_DeleteByOwnerAndModerator(t *testing.T) {
+	r, _, b, _, ac, bc, pc, _, rv, list := socialSetup(t)
+
+	mod := makeUser(t, r.app, "cmod@example.com", models.RoleModerator, true)
+	modc := browserFor(t, r.app, mod)
+
+	post := func(target, id string) string {
+		t.Helper()
+		comment(bc, target, id, "note "+target, "").AssertStatus(http.StatusSeeOther)
+
+		return r.str(`SELECT id::text FROM comments WHERE user_id = $1 AND `+target+`_id = $2`, b.ID, id)
+	}
+
+	onReview, onList := post("review", rv), post("list", list)
+
+	// A bystander cannot delete either; nothing is removed and nobody is told.
+	pc.Delete("/comments/" + onReview).AssertNotFound()
+	pc.Delete("/comments/" + onList).AssertNotFound()
+
+	if n := r.count(`SELECT count(*) FROM comments`); n != 2 {
+		t.Fatalf("%d comments after the refused deletes, want 2", n)
+	}
+
+	ac.Delete("/comments/" + onReview).AssertStatus(http.StatusSeeOther)
+	modc.Delete("/comments/" + onList).AssertStatus(http.StatusSeeOther)
+
+	if n := r.count(`SELECT count(*) FROM comments`); n != 0 {
+		t.Fatalf("%d comments left, want 0", n)
+	}
+
+	if n := r.notices(b, "content_deleted"); n != 2 {
+		t.Fatalf("author has %d content_deleted notices, want 2", n)
+	}
+
+	// Deleting your own comment sends no notice.
+	own := post("review", rv)
+	bc.Delete("/comments/" + own).AssertStatus(http.StatusSeeOther)
+
+	if n := r.notices(b, "content_deleted"); n != 2 {
+		t.Fatalf("author has %d content_deleted notices after deleting his own, want 2", n)
+	}
+
+	// A plain member keeps getting 404 on a comment that is gone.
+	modc.Delete("/comments/" + own).AssertNotFound()
 }

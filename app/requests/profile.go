@@ -77,8 +77,9 @@ type Comment struct {
 
 // CommentSchema validates Comment; the database also checks 1 to 2,000 characters.
 var CommentSchema = z.Struct[Comment](z.Shape{
-	"body":     z.String().Trim().Min(1).Max(2000),
-	"parentId": z.String().UUID().Default(""),
+	"body": z.String().Trim().Min(1).Max(2000),
+	// OmitEmpty: the form sends parentId "" for a top-level comment.
+	"parentId": z.String().UUID().OmitEmpty().Default(""),
 })
 
 // Reaction is a reaction on a review, comment or list (SDD 14 §12.11).

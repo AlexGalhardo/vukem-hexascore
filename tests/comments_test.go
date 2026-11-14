@@ -73,7 +73,16 @@ func socialSetup(
 ) (r *listRig, a, b, p models.User, ac, bc, pc *vukemtest.Client, item, reviewID, list string) {
 	t.Helper()
 
-	r = newSocialRig(t, true)
+	return socialSetupEnv(t, nil)
+}
+
+func socialSetupEnv(
+	t *testing.T,
+	extra map[string]string,
+) (r *listRig, a, b, p models.User, ac, bc, pc *vukemtest.Client, item, reviewID, list string) {
+	t.Helper()
+
+	r = newSocialRigEnv(t, true, extra)
 	a, ac = r.member("ca@example.com", "Critic", false)
 	b, bc = r.member("cb@example.com", "Second", false)
 	p, pc = r.member("cp@example.com", "Hidden", true)
@@ -227,7 +236,7 @@ func TestCommentsDisabledByDefault(t *testing.T) {
 // A comment is removed by its author, by the owner of the review or list it sits on, or by a moderator or admin;
 // everyone else gets 404. Removal by someone else tells the author.
 func TestComments_DeleteByOwnerAndModerator(t *testing.T) {
-	r, _, b, _, ac, bc, pc, _, rv, list := socialSetup(t)
+	r, _, b, _, ac, bc, pc, _, rv, list := socialSetupEnv(t, map[string]string{"FLAG_COMMUNITY_TRUSTED_MODERATORS": "true"})
 
 	mod := makeUser(t, r.app, "cmod@example.com", models.RoleModerator, true)
 	modc := browserFor(t, r.app, mod)
@@ -270,4 +279,38 @@ func TestComments_DeleteByOwnerAndModerator(t *testing.T) {
 
 	// A plain member keeps getting 404 on a comment that is gone.
 	modc.Delete("/comments/" + own).AssertNotFound()
+}
+
+// Security: the moderator override of DeleteComment follows the same rule as the panel (admin.CanModerate): a
+// banned or unverified moderator, or any moderator while community_trusted_moderators is off, is a plain member.
+func TestSecurity_CommentDeleteModeratorGate(t *testing.T) {
+	banned := `UPDATE users SET banned_at = now() WHERE id = $1`
+	unverified := `UPDATE users SET email_verified_at = NULL WHERE id = $1`
+
+	for name, tc := range map[string]struct {
+		env   map[string]string
+		setup string
+	}{
+		"flag off":   {nil, ""},
+		"banned":     {map[string]string{"FLAG_COMMUNITY_TRUSTED_MODERATORS": "true"}, banned},
+		"unverified": {map[string]string{"FLAG_COMMUNITY_TRUSTED_MODERATORS": "true"}, unverified},
+	} {
+		t.Run(name, func(t *testing.T) {
+			r, _, b, _, _, bc, _, _, rv, _ := socialSetupEnv(t, tc.env)
+			comment(bc, "review", rv, "keep me", "").AssertStatus(http.StatusSeeOther)
+			id := r.str(`SELECT id::text FROM comments WHERE user_id = $1`, b.ID)
+
+			mod := makeUser(t, r.app, "gmod@example.com", models.RoleModerator, true)
+			if tc.setup != "" {
+				r.count(`WITH u AS (`+tc.setup+` RETURNING 1) SELECT count(*) FROM u`, mod.ID)
+			}
+
+			// 404 (flag off), 403 (banned) or a redirect to verification (unverified): whichever, the row must stay.
+			browserFor(t, r.app, mod).Delete("/comments/" + id)
+
+			if n := r.count(`SELECT count(*) FROM comments WHERE id = $1`, id); n != 1 {
+				t.Fatalf("comment gone after a refused delete (%s)", name)
+			}
+		})
+	}
 }

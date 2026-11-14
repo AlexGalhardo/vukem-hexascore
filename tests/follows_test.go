@@ -18,9 +18,20 @@ import (
 func newSocialRig(t *testing.T, on bool) *listRig {
 	t.Helper()
 
+	return newSocialRigEnv(t, on, nil)
+}
+
+// newSocialRigEnv is newSocialRig with extra environment variables, such as the moderator flag.
+func newSocialRigEnv(t *testing.T, on bool, extra map[string]string) *listRig {
+	t.Helper()
+
 	env := map[string]string{"DATABASE_URL": pgtest.Database(t, "")}
 	if on {
 		env["FLAG_SOCIAL"] = "true"
+	}
+
+	for k, v := range extra {
+		env[k] = v
 	}
 
 	app := vukemtest.New(t, bootstrap.New, vukemtest.Options{Env: env})

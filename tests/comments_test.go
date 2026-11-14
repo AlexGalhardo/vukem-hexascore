@@ -156,6 +156,20 @@ func TestComments(t *testing.T) {
 	}
 }
 
+// The web form always sends parentId, empty for a top-level comment; the e2e run caught it answering 422.
+func TestComments_EmptyParentFromForm(t *testing.T) {
+	r, _, b, _, _, bc, _, _, rv, _ := socialSetup(t)
+
+	bc.PostJSON("/comments/review/"+rv, map[string]any{"body": "from the form", "parentId": ""}).
+		AssertStatus(http.StatusSeeOther)
+
+	if n := r.count(`SELECT count(*) FROM comments WHERE user_id = $1 AND parent_id IS NULL`, b.ID); n != 1 {
+		t.Fatalf("%d top-level comments, want 1", n)
+	}
+
+	bc.PostJSON("/comments/review/"+rv, map[string]any{"body": "bad", "parentId": "not-a-uuid"}).AssertUnprocessable()
+}
+
 func TestComments_RateLimit(t *testing.T) {
 	r, _, _, _, _, bc, _, _, rv, _ := socialSetup(t)
 

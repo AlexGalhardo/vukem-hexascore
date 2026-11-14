@@ -33,6 +33,20 @@ HexaScore follows [Semantic Versioning](https://semver.org) and tags releases as
 
 Changes are listed in [CHANGELOG.md](CHANGELOG.md), which follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Container image
+
+Each `vX.Y.Z` tag publishes `ghcr.io/alexgalhardo/hexascore-app` and `docker.io/<user>/hexascore-app` with the tags `X.Y.Z`, `X.Y` and (stable tags only) `latest`, for `linux/amd64` and `linux/arm64`. The images are signed with cosign and carry a build provenance attestation.
+
+The release workflow builds the image first and runs a smoke test before pushing. The bare image exits at boot without a database and Stripe settings, so the smoke starts it through the compose `app` profile (Postgres, migrate, seed) and requires `/up` to answer 200. To run it locally:
+
+```sh
+docker build -t hexascore:smoke .
+export APP_KEY="base64:$(openssl rand -base64 32)"
+E2E_IMAGE_TAG=smoke bash scripts/ci/qa-up.sh hexascore:smoke
+curl -fsS http://127.0.0.1:3000/up
+docker compose --project-name hx-ci --profile app down -v
+```
+
 ## Contributing
 
 Thank you for considering a contribution to HexaScore.

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **release:** The tag workflow publishes the `hexascore-app` image to GHCR and Docker Hub (`X.Y.Z`, `X.Y`, `latest` on stable tags), smoke-tested through the compose `app` profile before the push, signed with cosign and attested
 - **social:** Weekly trending ranking of the most active reviews and items of the last 7 days (reviews 3, comments 2, reactions 1 points, halved every 72 hours), computed by `social.compute_trending` on Sunday 03:00 America/Sao_Paulo into the new `social_trending` table (12 weeks kept) and shown on the public `/trending` page while the `social` flag is on
 - **social:** The author of a review or list can delete other members' comments on it; the comment's author gets a `content_deleted` notice
 - **e2e:** Follow, feed, like, comment and owner-delete flow in `social.spec.ts`

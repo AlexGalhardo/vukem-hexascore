@@ -63,6 +63,7 @@ func Follows(r *router.Router, app *vukem.App) error {
 	r.Put("/reactions/{type}/{id}", comments.React).Name("reactions.put").Use(required, verified, reactLimit)
 	r.Delete("/reactions/{type}/{id}", comments.Unreact).Name("reactions.delete").Use(required, verified, reactLimit)
 	r.Patch("/profile/feed", h.UpdateFeedOptIn).Name("profile.feed").Use(required, verified)
+	r.Get("/trending", controllers.NewSocialTrending(svc).Index).Name("trending")
 	r.Get("/feed", controllers.NewFeed(svc, acc.Web.Name()).Index).Name("feed").Use(required, verified)
 
 	return nil

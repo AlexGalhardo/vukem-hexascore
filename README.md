@@ -22,6 +22,7 @@ This application is built using the [Vukem Go framework](https://vukem.dev).
 
 - [Introduction](#introduction)
 - [Stability](#stability)
+- [Container image](#container-image)
 - [Contributing](#contributing)
 - [Code of conduct](#code-of-conduct)
 - [Security vulnerabilities](#security-vulnerabilities)

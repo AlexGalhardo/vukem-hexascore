@@ -44,7 +44,7 @@ ARG APP_VERSION=
 ENV APP_VERSION=${APP_VERSION}
 # pg_dump for the backup job (SDD 11 §7.3) and cwebp for covers (SDD 06);
 # exact Alpine 3.24 versions so a rebuild never changes them silently.
-RUN apk add --no-cache ca-certificates tzdata postgresql18-client=18.6-r0 libwebp-tools=1.6.0-r0 \
+RUN apk add --no-cache ca-certificates tzdata postgresql18-client=18.7-r0 libwebp-tools=1.6.0-r0 \
 	&& adduser -D -H -u 10001 app \
 	&& mkdir -p /app/storage \
 	&& chown app:app /app/storage

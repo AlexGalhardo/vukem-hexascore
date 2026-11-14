@@ -8,7 +8,7 @@ Install Go 1.27.3, bun 1.4.3, the vukem CLI v0.37.0 and git as described in the 
 
 ## Install PostgreSQL 18.6
 
-The repository pins Postgres 18.6 (`postgres:18.6-alpine3.24` in `docker-compose.yml`, `postgresql18-client=18.6-r0` in the `Dockerfile`). Use the same version natively. Pick one of:
+The repository pins Postgres 18.6 (`postgres:18.6-alpine3.24` in `docker-compose.yml`, `postgresql18-client=18.7-r0` in the `Dockerfile`). Use the same version natively. Pick one of:
 
 - **Official installer** (EnterpriseDB, linked from <https://www.postgresql.org/download/windows/>): download the 18.6 installer from <https://www.enterprisedb.com/downloads/postgres-postgresql-downloads>. When it asks for the port, enter `5433` so the URLs in `.env.example` work unchanged. It installs a Windows service and asks for a password for the `postgres` superuser.
 - **Scoop** (main bucket, package `postgresql`, version `18.6-5`):

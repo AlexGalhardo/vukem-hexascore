@@ -2188,6 +2188,17 @@
       "review_published": "reviewed",
       "score": "Score {score}"
     },
+    "trending": {
+      "title": "Trending this week",
+      "link": "See what is trending",
+      "intro": "The most active reviews and items of the last 7 days, updated every Sunday.",
+      "weekOf": "Week of {date}",
+      "empty": "Nothing is trending yet. Check back after the Sunday update.",
+      "items": "Most active items",
+      "reviews": "Most active reviews",
+      "activity": "Activity: {reviews} reviews, {likes} likes, {comments} comments",
+      "reviewActivity": "Activity: {likes} likes, {comments} comments"
+    },
     "optIn": {
       "label": "Share my activity with followers",
       "help": "Your ratings, statuses and public lists appear in your followers' feeds and on your profile. Off by default; turning it off hides past activity at once.",

@@ -2188,6 +2188,17 @@
       "review_published": "resenhou",
       "score": "Nota {score}"
     },
+    "trending": {
+      "title": "Em alta esta semana",
+      "link": "Ver o que está em alta",
+      "intro": "As resenhas e os itens mais ativos dos últimos 7 dias, atualizados todo domingo.",
+      "weekOf": "Semana de {date}",
+      "empty": "Nada em alta ainda. Volte depois da atualização de domingo.",
+      "items": "Itens mais ativos",
+      "reviews": "Resenhas mais ativas",
+      "activity": "Atividade: {reviews} resenhas, {likes} curtidas, {comments} comentários",
+      "reviewActivity": "Atividade: {likes} curtidas, {comments} comentários"
+    },
     "optIn": {
       "label": "Compartilhar minha atividade com seguidores",
       "help": "Suas avaliações, status e listas públicas aparecem no feed de quem segue você e no seu perfil. Desligado por padrão; ao desligar, a atividade anterior some na hora.",

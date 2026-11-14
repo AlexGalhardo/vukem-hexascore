@@ -220,3 +220,36 @@ func TestSocialTrending_Schedule(t *testing.T) {
 
 	t.Fatalf("schedule missing %s", want)
 }
+
+func TestSocialTrending_Page(t *testing.T) {
+	off := newSocialRig(t, false)
+	off.app.Client(t).Inertia("").Get("/trending").AssertStatus(http.StatusNotFound)
+
+	r := newSocialRig(t, true)
+	a, ac := r.member("trp-a@example.com", "Alfa", false)
+	_, bc := r.member("trp-b@example.com", "Bravo", false)
+	item := r.releasedItem("game")
+	r.rate(ac, item, 8)
+	review(ac, item, "Worth the week", false).AssertStatus(http.StatusSeeOther)
+	rv := r.str(`SELECT id::text FROM reviews WHERE user_id = $1`, a.ID)
+	react(bc, "review", rv, "like").AssertStatus(http.StatusSeeOther)
+
+	// Before the first run the page is empty, not an error.
+	page := r.app.Client(t).Inertia("").Get("/trending").AssertOK().AssertInertia("Trending/Index")
+	if v, _ := page.Prop("trending"); v == nil {
+		t.Fatal("trending prop missing before the first run")
+	}
+
+	if err := social.ComputeTrending(t.Context(), r.acc.DB, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	// Anonymous visitors read it: it is public content.
+	page = r.app.Client(t).Inertia("").Get("/trending").AssertOK().AssertInertia("Trending/Index")
+	raw, _ := page.Prop("trending")
+
+	m, _ := raw.(map[string]any)
+	if items, _ := m["items"].([]any); len(items) != 1 {
+		t.Fatalf("trending = %v, want one item", raw)
+	}
+}

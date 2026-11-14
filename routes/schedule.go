@@ -10,6 +10,7 @@ import (
 
 	"github.com/AlexGalhardo/hexascore-app/app/jobs"
 	"github.com/AlexGalhardo/hexascore-app/app/recommend/primitives"
+	"github.com/AlexGalhardo/hexascore-app/app/social"
 	"github.com/AlexGalhardo/hexascore-app/internal/ingest"
 	"github.com/AlexGalhardo/hexascore-app/internal/ingest/covers"
 	"github.com/AlexGalhardo/hexascore-app/internal/ingest/run"
@@ -35,6 +36,9 @@ func Schedule(s *schedule.Schedule, app *vukem.App) {
 	s.Job(jobs.ComputeTrending{}).Cron("5 * * * *").WithoutOverlapping()
 	// 04:45 stays clear of the 04:40 and 04:50 prunes.
 	s.Job(jobs.PruneTrending{}).DailyAt("04:45").WithoutOverlapping()
+	// Weekly social trending (SDD 14 §12.13): Sunday 03:00 in the operator's zone, after the 02:00 covers run and
+	// before the 04:00 scores; the week it writes is the Sunday date in that zone.
+	s.Job(jobs.ComputeSocialTrending{}).WeeklyOn(time.Sunday, "03:00").In(social.Zone).WithoutOverlapping()
 	s.Job(jobs.ComputeSimilar{}).DailyAt("02:00").WithoutOverlapping()
 	s.Job(jobs.RecoEvalMonthly{}).MonthlyOn(1, "05:30").WithoutOverlapping()
 	s.Job(jobs.RefreshEntityStats{}).Hourly().WithoutOverlapping()

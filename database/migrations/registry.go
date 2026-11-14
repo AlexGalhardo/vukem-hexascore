@@ -120,5 +120,6 @@ func All() []schema.Migration {
 		m20261107000000AddItemsListScoreIdx(),
 		m20261107000100AddItemsListCoveredIdx(),
 		m20261107200000CreateGoogleNonces(),
+		m20261114000000CreateSocialTrending(),
 	}
 }

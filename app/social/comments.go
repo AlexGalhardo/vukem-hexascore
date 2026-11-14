@@ -56,6 +56,8 @@ type Comment struct {
 	Helpful    int       `json:"helpful"`
 	MyReaction string    `json:"myReaction,omitempty"`
 	Mine       bool      `json:"mine,omitempty"`
+	// Removable is set when the viewer owns the review or list the comment sits on and may delete it.
+	Removable bool `json:"removable,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
 	Replies    []Comment `json:"replies,omitempty"`
 }
@@ -344,8 +346,10 @@ func (s *Follows) Comments(
 
 	rows, err := s.DB.QueryContext(ctx, `SELECT c.id::text, c.`+col+`::text, coalesce(c.parent_id::text, ''), c.user_id,
   coalesce(u.display_username, u.username, ''), c.body, c.like_count, c.helpful_count, c.created_at,
-  coalesce(rx.kind, '')
+  coalesce(rx.kind, ''), coalesce(v.user_id, l.user_id) = $2
 FROM comments c JOIN users u ON u.id = c.user_id
+LEFT JOIN reviews v ON v.id = c.review_id
+LEFT JOIN lists l ON l.id = c.list_id
 LEFT JOIN reactions rx ON rx.comment_id = c.id AND rx.user_id = $2
 WHERE c.`+col+` = ANY($1::uuid[]) AND NOT c.hidden AND (c.user_id = $2 OR (`+visible+`))
 ORDER BY c.created_at, c.id LIMIT $3`, "{"+strings.Join(ids, ",")+"}", viewerID, commentCap)
@@ -366,13 +370,14 @@ ORDER BY c.created_at, c.id LIMIT $3`, "{"+strings.Join(ids, ",")+"}", viewerID,
 			author int64
 		)
 		if err := rows.Scan(&r.c.ID, &r.target, &r.parent, &author, &r.c.Author.Nickname, &r.c.Body, &r.c.Likes,
-			&r.c.Helpful, &r.c.CreatedAt, &r.c.MyReaction); err != nil {
+			&r.c.Helpful, &r.c.CreatedAt, &r.c.MyReaction, &r.c.Removable); err != nil {
 			return nil, fmt.Errorf("social: comment row: %w", err)
 		}
 		if r.c.Author.Nickname != "" {
 			r.c.Author.Initial = strings.ToUpper(string([]rune(r.c.Author.Nickname)[:1]))
 		}
 		r.c.Mine = viewerID != 0 && author == viewerID
+		r.c.Removable = r.c.Removable && !r.c.Mine
 		all = append(all, r)
 	}
 	if err := rows.Err(); err != nil {

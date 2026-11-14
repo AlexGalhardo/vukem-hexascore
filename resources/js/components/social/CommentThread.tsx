@@ -18,6 +18,8 @@ export interface CommentEntry {
 	helpful: number;
 	myReaction?: ReactionKind;
 	mine?: boolean;
+	/** The viewer owns the review or list this sits on, so may delete it. */
+	removable?: boolean;
 	createdAt: string;
 	replies?: CommentEntry[];
 }
@@ -109,7 +111,7 @@ export default function CommentThread({ target, id, comments, canWrite }: Props)
 						{t("comments.reply")}
 					</button>
 				)}
-				{c.mine && (
+				{(c.mine || c.removable) && (
 					<button
 						type="button"
 						className="min-h-11 underline"

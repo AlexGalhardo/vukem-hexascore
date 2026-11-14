@@ -124,12 +124,19 @@ func TestComments(t *testing.T) {
 		t.Fatalf("Second has %d new_comment notices, want 1 (the reply)", n)
 	}
 
+	if own := r.reviewProp(&a, item, "Critic")["comments"].([]any)[0].(map[string]any); own["removable"] != true {
+		t.Fatalf("the review owner's view of Second's comment = %v, want removable", own)
+	}
+
 	card := r.reviewProp(nil, item, "Critic")
 	comments := card["comments"].([]any)
 	if len(comments) != 1 {
 		t.Fatalf("comments = %v, want Second's only (the private author is left out)", comments)
 	}
 	first := comments[0].(map[string]any)
+	if first["removable"] != nil {
+		t.Fatalf("an anonymous reader sees the comment as removable: %v", first)
+	}
 	replies, _ := first["replies"].([]any)
 	if first["body"] != "Agreed" || len(replies) != 1 || replies[0].(map[string]any)["body"] != "Thanks" {
 		t.Fatalf("thread = %v", first)

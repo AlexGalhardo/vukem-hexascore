@@ -122,3 +122,17 @@ test("offers a report button on other people's comments only", () => {
 
 	expect(screen.getAllByRole("button", { name: "social.report.reportComment" })).toHaveLength(1);
 });
+
+test("the owner of the review can delete someone else's comment", async () => {
+	render(
+		<CommentThread
+			target="review"
+			id="r1"
+			canWrite
+			comments={[c({ id: "c9", removable: true })]}
+		/>,
+	);
+
+	await userEvent.click(screen.getByRole("button", { name: "comments.delete" }));
+	expect(del).toHaveBeenCalledWith("/comments/c9", expect.anything());
+});
